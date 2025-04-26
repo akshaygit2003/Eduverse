@@ -31,7 +31,7 @@ exports.createCourse = async (req, res) => {
     const instructions = JSON.parse(_instructions);
 
     //console.log("tag", tag);
-    //console.log("instructions", instructions);
+    // console.log("instructions", instructions);
 
     // Check if any of the required fields are missing
     if (
@@ -114,7 +114,7 @@ exports.createCourse = async (req, res) => {
       },
       { new: true }
     );
-    //console.log("HEREEEEEEEE", categoryDetails2);
+    // console.log("HEREEEEEEEE", categoryDetails2);
     // Return the new course and a success message
     res.status(200).json({
       success: true,

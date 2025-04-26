@@ -54,18 +54,19 @@ export async function buyCourse(
         Authorization: `Bearer ${token}`,
       }
     );
-
+    console.log("Order Response:", orderResponse); // Debugging
     if (!orderResponse.data.success) {
       throw new Error(orderResponse.data.message);
     }
-    //("PRINTING orderResponse", orderResponse);
+    console.log("ORDER RESPONSE", orderResponse);
+
     //options
     const options = {
-      key: process.env.RAZORPAY_KEY,
+      key: process.env.REACT_APP_RAZORPAY_KEY,
       currency: orderResponse.data.data.currency,
       amount: `${orderResponse.data.data.amount}`,
       order_id: orderResponse.data.data.id,
-      name: "StudyNotion",
+      name: "SkillNotion",
       description: "Thank You for Purchasing the Course",
       image: rzpLogo,
       prefill: {
@@ -73,7 +74,7 @@ export async function buyCourse(
         email: userDetails.email,
       },
       handler: function (response) {
-        //send successful wala mail
+        //send successful mail
         sendPaymentSuccessEmail(
           response,
           orderResponse.data.data.amount,
@@ -83,7 +84,7 @@ export async function buyCourse(
         verifyPayment({ ...response, courses }, token, navigate, dispatch);
       },
     };
-    //miss hogya tha
+    //missed
     const paymentObject = new window.Razorpay(options);
     paymentObject.open();
     paymentObject.on("payment.failed", function (response) {

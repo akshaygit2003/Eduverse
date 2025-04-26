@@ -8,7 +8,7 @@ const LearningGridArray = [
     heading: "World-Class Learning for",
     highlightText: "Anyone, Anywhere",
     description:
-      "Studynotion partners with more than 275+ leading universities and companies to bring flexible, affordable, job-relevant online learning to individuals and organizations worldwide.",
+      "SkillNotion partners with more than 275+ leading universities and companies to bring flexible, affordable, job-relevant online learning to individuals and organizations worldwide.",
     BtnText: "Learn More",
     BtnLink: "/",
   },
@@ -28,19 +28,19 @@ const LearningGridArray = [
     order: 3,
     heading: "Certification",
     description:
-      "Studynotion provides industry-recognized certification to validate your new skills and enhance your career prospects.",
+      "SkillNotion provides industry-recognized certification to validate your new skills and enhance your career prospects.",
   },
   {
     order: 4,
     heading: `Rating "Auto-grading"`,
     description:
-      "Studynotion’s auto-grading feature provides instant, objective feedback to help learners assess their understanding and progress efficiently.",
+      "SkillNotion’s auto-grading feature provides instant, objective feedback to help learners assess their understanding and progress efficiently.",
   },
   {
     order: 5,
     heading: "Ready to Work",
     description:
-      "Studynotion equips learners with job-ready skills, preparing them to excel in the workforce.",
+      "SkillNotion equips learners with job-ready skills, preparing them to excel in the workforce.",
   },
 ];
 
