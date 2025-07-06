@@ -1,5 +1,6 @@
 # Project Directory structure:
 
+```bash
 ├── README.md
 ├── package.json
 ├── public
@@ -210,6 +211,7 @@
 │ ├── constants.js
 │ └── dateFormatter.js
 └── tailwind.config.js
+```
 
 # React & Tailwind CSS Starter Pack
 
