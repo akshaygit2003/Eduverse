@@ -67,7 +67,7 @@ exports.courseEnrollmentEmail = (courseName, name) => {
     
     <body>
         <div class="container">
-            <a href="https://studynotion-edtech-project.vercel.app"><img class="logo" src="https://i.ibb.co/q3nJjg3j/screenshot-1.png"
+            <a href="https://eduverse-akshay-nemas-projects.vercel.app"><img class="logo" src="https://i.ibb.co/C3fZ0csk/Navbar-Logocopy.png"
                     alt="SkillNotion Logo"></a>
             <div class="message">Course Registration Confirmation</div>
             <div class="body">
