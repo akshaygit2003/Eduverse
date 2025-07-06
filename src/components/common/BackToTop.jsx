@@ -1,12 +1,15 @@
 import React, { useState, useEffect } from "react";
-import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
+import KeyboardArrowUpIcon from "@mui/icons-material/KeyboardArrowUp";
 
 const BackToTop = () => {
   const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => {
-      if (document.body.scrollTop > 20 || document.documentElement.scrollTop > 20) {
+      if (
+        document.body.scrollTop > 20 ||
+        document.documentElement.scrollTop > 20
+      ) {
         setIsVisible(true);
       } else {
         setIsVisible(false);
@@ -25,7 +28,7 @@ const BackToTop = () => {
   return (
     <button
       id="myBtn"
-      className={`back-to-top ${isVisible ? 'show' : ''}`}
+      className={`back-to-top ${isVisible ? "show" : ""}`}
       onClick={handleClick}
       aria-label="Back to top"
     >
