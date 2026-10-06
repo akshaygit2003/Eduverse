@@ -1,6 +1,15 @@
-// const BASE_URL =  "http://localhost:4000/api/v1";
-const BASE_URL =
+const rawBaseUrl =
   process.env.REACT_APP_BASE_URL || "http://localhost:4000/api/v1";
+
+const getFormattedBaseUrl = (url) => {
+  let cleaned = url.trim().replace(/\/+$/, "");
+  if (!cleaned.endsWith("/api/v1")) {
+    cleaned += "/api/v1";
+  }
+  return cleaned;
+};
+
+const BASE_URL = getFormattedBaseUrl(rawBaseUrl);
 
 // AUTH ENDPOINTS
 export const endpoints = {
