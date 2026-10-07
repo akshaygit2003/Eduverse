@@ -118,7 +118,7 @@ exports.chatWithGemini = async (req, res) => {
       return `🤖 **Eduverse AI Assistant**\n\nI can assist you with basic questions, technology concepts, and all course details on Eduverse!\n\n`;
     };
 
-    // If key is dummy or missing, return smart fallback
+    // If key is dummy or missing, return fallback
     if (!apiKey || apiKey === "YOUR_GEMINI_API_KEY_HERE") {
       return res.status(200).json({
         success: true,
