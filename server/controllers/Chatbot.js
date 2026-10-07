@@ -13,6 +13,9 @@ exports.chatWithGemini = async (req, res) => {
       });
     }
 
+    const trimmedMsg = message.trim();
+    const lowerMsg = trimmedMsg.toLowerCase();
+
     // Fetch live categories & courses from database for context
     let categoriesList = [];
     let coursesList = [];
@@ -23,8 +26,7 @@ exports.chatWithGemini = async (req, res) => {
         .populate("category", "name")
         .populate("instructor", "firstName lastName")
         .exec();
-      
-      // If no published courses found, fetch all courses as fallback
+
       if (!coursesList || coursesList.length === 0) {
         coursesList = await Course.find({})
           .populate("category", "name")
@@ -37,7 +39,7 @@ exports.chatWithGemini = async (req, res) => {
 
     // Build database summary context for Gemini
     let dbContext = "\n--- LIVE EDUVERSE DATABASE CONTEXT ---\n";
-    
+
     if (categoriesList.length > 0) {
       dbContext += "\n**Categories Available:**\n";
       categoriesList.forEach((cat) => {
@@ -69,82 +71,129 @@ exports.chatWithGemini = async (req, res) => {
 
     const apiKey = process.env.GEMINI_API_KEY;
 
-    // Fallback if API key is placeholder
-    if (!apiKey || apiKey === "YOUR_GEMINI_API_KEY_HERE") {
-      let dummyReply = `Hello! I am **Eduverse Assistant**.\n\nHere are the exact course categories and prices currently available on our platform:\n\n`;
-
-      if (coursesList.length > 0) {
-        dummyReply += `### 📚 Available Courses:\n`;
-        coursesList.forEach((c) => {
-          dummyReply += `* **${c.courseName}**\n`;
-          dummyReply += `  * **Category:** ${c.category?.name || "General"}\n`;
-          dummyReply += `  * **Price:** ₹${c.price !== undefined ? c.price : 0}\n`;
-          if (c.courseDescription) {
-            dummyReply += `  * **Overview:** ${c.courseDescription}\n`;
-          }
-        });
-      } else if (categoriesList.length > 0) {
-        dummyReply += `### 🏷️ Categories Available:\n`;
-        categoriesList.forEach((cat) => {
-          dummyReply += `* **${cat.name}**: ${cat.description || "Explore courses in this category"}\n`;
-        });
-      } else {
-        dummyReply += `* **Web Development** (React, Node.js, Express, Flask, Django)\n* **Data Science & Analytics**\n* **Machine Learning & AI**\n`;
+    // Helper for intelligent fallback response when API key is missing, placeholder, or API fails
+    const generateSmartFallback = () => {
+      // 1. Time / Date queries
+      if (lowerMsg.includes("time") || lowerMsg.includes("date") || lowerMsg.includes("day") || lowerMsg.includes("clock")) {
+        const now = new Date();
+        const timeString = now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+        const dateString = now.toLocaleDateString([], { weekday: "long", year: "numeric", month: "long", day: "numeric" });
+        return `🕒 **Current Date & Time:**\n- **Time:** ${timeString}\n- **Date:** ${dateString}\n\nHow can I help you with your learning goals today?`;
       }
 
-      dummyReply += `\n*(Note: Add your actual \`GEMINI_API_KEY\` in \`server/.env\` for custom conversational responses!)*`;
+      // 2. Greetings
+      if (lowerMsg === "hi" || lowerMsg === "hello" || lowerMsg === "hey" || lowerMsg.startsWith("greetings")) {
+        return `👋 **Hello! Welcome to Eduverse AI.**\n\nI can help you with:\n- **Course Listings & Pricing**\n- **EdTech & Technology Concepts**\n- **Learning Roadmaps & Projects**\n\nWhat would you like to explore today?`;
+      }
 
+      // 3. EdTech / General Education queries
+      if (lowerMsg.includes("edtech") || lowerMsg.includes("educational technology") || lowerMsg.includes("online learning")) {
+        return `💡 **What is EdTech?**\n\n**EdTech (Educational Technology)** combines digital tools, software, and educational methodology to make learning accessible, interactive, and personalized.\n\nAt **Eduverse**, we leverage EdTech to provide hands-on programming courses, real-world development projects, and structured skill roadmaps!`;
+      }
+
+      // 4. Course / Category / Pricing queries
+      if (lowerMsg.includes("course") || lowerMsg.includes("category") || lowerMsg.includes("price") || lowerMsg.includes("cost") || lowerMsg.includes("project") || lowerMsg.includes("catalog") || lowerMsg.includes("learn")) {
+        let reply = `📚 **Eduverse Courses & Categories:**\n\n`;
+        if (coursesList.length > 0) {
+          coursesList.forEach((c) => {
+            reply += `* **${c.courseName}**\n`;
+            reply += `  * **Category:** ${c.category?.name || "General"}\n`;
+            reply += `  * **Price:** ₹${c.price !== undefined ? c.price : 0}\n`;
+            if (c.courseDescription) {
+              reply += `  * **Overview:** ${c.courseDescription}\n`;
+            }
+          });
+        } else if (categoriesList.length > 0) {
+          reply += `**Categories Available:**\n`;
+          categoriesList.forEach((cat) => {
+            reply += `* **${cat.name}**: ${cat.description || "Explore courses in this category"}\n`;
+          });
+        } else {
+          reply += `* **Web Development** (React, Node.js, Express, Flask, Django)\n* **Data Science & Analytics**\n* **Machine Learning & AI**\n`;
+        }
+        return reply;
+      }
+
+      // 5. Default general assistant response
+      return `🤖 **Eduverse AI Assistant**\n\nI can assist you with basic questions, technology concepts, and all course details on Eduverse!\n\n`;
+    };
+
+    // If key is dummy or missing, return smart fallback
+    if (!apiKey || apiKey === "YOUR_GEMINI_API_KEY_HERE") {
       return res.status(200).json({
         success: true,
-        reply: dummyReply,
+        reply: generateSmartFallback(),
         isDummy: true,
       });
     }
 
-    const ai = new GoogleGenAI({ apiKey });
+    // Attempt Gemini AI Call
+    try {
+      const ai = new GoogleGenAI({ apiKey });
 
-    // Build context-aware system instruction with live database information
-    const systemInstruction = `You are Eduverse AI Assistant, an expert educational & customer support guide for the Eduverse platform.
-Eduverse is an online tech learning platform with real-time course listings, categories, and prices.
+      const nowIST = new Date().toLocaleString("en-IN", {
+        timeZone: "Asia/Kolkata",
+        dateStyle: "full",
+        timeStyle: "medium",
+      });
+
+      const systemInstruction = `You are Eduverse AI Assistant, a versatile educational & general knowledge guide for the Eduverse platform.
+
+CURRENT REAL-TIME CONTEXT:
+- Current Time & Date in India (IST): ${nowIST}
+- System Timestamp: ${new Date().toISOString()}
 
 ${dbContext}
 
 Rules:
-1. Always use the exact course names, categories, and prices provided in the database context above when answering queries about courses.
-2. Be helpful, polite, concise, and educational. Format responses using clean Markdown lists and bold text.
-3. If asked about a course or category not in the database, mention what is currently available and offer to guide them.
-4. Keep responses well-formatted and easy to read.`;
+1. You have access to real-time clock data. When the user asks about the time, date, or time in India, use the Current Time & Date in India (IST) provided above to answer accurately and confidently.
+2. When answering queries specifically about Eduverse courses, categories, or prices, always use the exact details from the LIVE EDUVERSE DATABASE CONTEXT provided above.
+3. Be friendly, polite, concise, and helpful. Format responses with clean Markdown bullet points and bold text.`;
 
-    // Construct conversation history
-    let contentsList = [];
-    if (Array.isArray(history) && history.length > 0) {
-      history.forEach((item) => {
-        contentsList.push({
-          role: item.sender === "user" ? "user" : "model",
-          parts: [{ text: item.text }],
+      let contentsList = [];
+      if (Array.isArray(history) && history.length > 0) {
+        history.forEach((item) => {
+          contentsList.push({
+            role: item.sender === "user" ? "user" : "model",
+            parts: [{ text: item.text }],
+          });
         });
+      }
+
+      contentsList.push({
+        role: "user",
+        parts: [{ text: message }],
+      });
+
+      let response;
+      try {
+        response = await ai.models.generateContent({
+          model: "gemini-2.5-flash",
+          contents: contentsList,
+          config: { systemInstruction },
+        });
+      } catch (geminiModelErr) {
+        // Fallback model if gemini-2.5-flash is unavailable in API region
+        response = await ai.models.generateContent({
+          model: "gemini-1.5-flash",
+          contents: contentsList,
+          config: { systemInstruction },
+        });
+      }
+
+      const replyText = response?.text || generateSmartFallback();
+
+      return res.status(200).json({
+        success: true,
+        reply: replyText,
+      });
+    } catch (apiErr) {
+      console.error("Gemini API Call failed, switching to smart fallback:", apiErr);
+      return res.status(200).json({
+        success: true,
+        reply: generateSmartFallback(),
       });
     }
-
-    contentsList.push({
-      role: "user",
-      parts: [{ text: message }],
-    });
-
-    const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
-      contents: contentsList,
-      config: {
-        systemInstruction,
-      },
-    });
-
-    const replyText = response.text || "Sorry, I could not generate a response.";
-
-    return res.status(200).json({
-      success: true,
-      reply: replyText,
-    });
   } catch (error) {
     console.error("Gemini Chatbot Controller Error:", error);
     return res.status(500).json({
